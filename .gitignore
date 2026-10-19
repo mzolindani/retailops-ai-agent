@@ -1,0 +1,33 @@
+# .venv/
+# __pycache__/
+# .pytest_cache/
+# .ruff_cache/
+# .env
+# *.py[cod]
+@'
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Downloaded and processed data
+data/raw/
+data/processed/
+
+# Local database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Editors and operating system
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+'@ | Set-Content -Encoding utf8 .gitignore

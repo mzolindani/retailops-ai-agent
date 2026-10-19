@@ -1,0 +1,22 @@
+[project]
+name = "retailops-ai-agent"
+version = "0.1.0"
+description = "Local-model ReAct agent for a simulated retail operations environment"
+requires-python = ">=3.11"
+dependencies = [
+  "langchain>=1.0.0",
+  "langgraph>=1.0.0",
+  "langchain-ollama>=1.0.0",
+  "pydantic>=2.7.0",
+  "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0.0", "ruff>=0.6.0"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
