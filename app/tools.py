@@ -25,7 +25,7 @@ def lookup_products(query: str = "", limit: int = 10) -> str:
     q = query.strip()
     pattern = f"%{q}%"
 
-    
+
     sql = """
         SELECT
             p.product_id,
@@ -116,17 +116,18 @@ def get_inventory(
 
         return _json({"product": product, **stock})
 
-    # except psycopg.Error:
-    #     return _json({
-    #         "error": "database_error",
-    #         "message": "Inventory lookup could not be completed.",
-    #     })
     except psycopg.Error as exc:
         print(f"Inventory lookup database error: {exc!r}")
         return _json({
             "error": "database_error",
-            "message": str(exc),
+            "message": "Inventory lookup could not be completed.",
         })
+    # except psycopg.Error as exc:
+    #     print(f"Inventory lookup database error: {exc!r}")
+    #     return _json({
+    #         "error": "database_error",
+    #         "message": str(exc),
+    #     })
 
 
 def get_order(order_id: str) -> str:
@@ -192,18 +193,22 @@ def check_fulfilment(
     # In Olist, each row in order_items represents one ordered item.
     # Count rows per product to calculate the quantity required.
     fulfilment_sql = """
-        SELECT
-            oi.product_id,
-            COUNT(*)::INTEGER AS quantity_required,
-            COALESCE(i.available_quantity, 0) AS quantity_available
-        FROM order_items AS oi
-        LEFT JOIN inventory AS i
-            ON i.product_id = oi.product_id
-           AND i.store_id = %s
-        WHERE oi.order_id = %s
-        GROUP BY oi.product_id, i.available_quantity
-        ORDER BY oi.product_id;
-    """
+    SELECT
+        oi.product_id,
+        COUNT(*)::INTEGER AS quantity_required,
+        i.available_quantity AS quantity_available,
+        (i.product_id IS NOT NULL) AS inventory_record_found
+    FROM order_items AS oi
+    LEFT JOIN inventory AS i
+        ON i.product_id = oi.product_id
+       AND i.store_id = %s
+    WHERE oi.order_id = %s
+    GROUP BY
+        oi.product_id,
+        i.product_id,
+        i.available_quantity
+    ORDER BY oi.product_id;
+"""
 
     try:
         with get_db_connection() as connection:
@@ -221,14 +226,23 @@ def check_fulfilment(
                 rows = cursor.fetchall()
 
         lines = []
+
+
         for row in rows:
+            inventory_found = row["inventory_record_found"]
+            available = row["quantity_available"]
+
             enough = (
-                row["quantity_available"] >= row["quantity_required"]
+                inventory_found
+                and available is not None
+                and available >= row["quantity_required"]
             )
+
             lines.append({
                 "product_id": row["product_id"],
                 "quantity_required": row["quantity_required"],
-                "quantity_available": row["quantity_available"],
+                "quantity_available": available,
+                "inventory_record_found": inventory_found,
                 "sufficient": enough,
             })
 

@@ -86,11 +86,13 @@ def test_order_can_be_fulfilled_when_stock_is_sufficient():
             "product_id": "product-123",
             "quantity_required": 2,
             "quantity_available": 5,
+            "inventory_record_found": True,
         },
         {
             "product_id": "product-456",
             "quantity_required": 3,
             "quantity_available": 3,
+            "inventory_record_found": True,
         },
     ]
 
@@ -105,13 +107,13 @@ def test_order_can_be_fulfilled_when_stock_is_sufficient():
 
 def test_order_cannot_be_fulfilled_when_stock_is_insufficient():
     connection, cursor = mock_database()
-
     cursor.fetchone.return_value = {"order_id": "order-456"}
     cursor.fetchall.return_value = [
         {
             "product_id": "product-789",
             "quantity_required": 3,
             "quantity_available": 0,
+            "inventory_record_found": True,
         }
     ]
 
@@ -122,4 +124,5 @@ def test_order_cannot_be_fulfilled_when_stock_is_insufficient():
 
     assert result["can_fulfil"] is False
     assert result["lines"][0]["quantity_available"] == 0
+    assert result["lines"][0]["inventory_record_found"] is True
     assert result["lines"][0]["sufficient"] is False
